@@ -1,4 +1,4 @@
-package org.enterprisedlt.client
+package org.enterprisedlt.fabric.client
 
 import java.io.{File, FileReader}
 import java.nio.charset.StandardCharsets

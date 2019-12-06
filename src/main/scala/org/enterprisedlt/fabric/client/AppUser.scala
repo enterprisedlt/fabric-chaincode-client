@@ -1,4 +1,4 @@
-package org.enterprisedlt.client
+package org.enterprisedlt.fabric.client
 
 import org.hyperledger.fabric.sdk.{Enrollment, User}
 

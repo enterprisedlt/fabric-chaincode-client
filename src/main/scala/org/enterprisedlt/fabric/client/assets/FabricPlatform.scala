@@ -1,4 +1,4 @@
-package org.enterprisedlt.client.assets
+package org.enterprisedlt.fabric.client.assets
 
 import org.hyperledger.fabric.sdk.{Channel, HFClient, User}
 
