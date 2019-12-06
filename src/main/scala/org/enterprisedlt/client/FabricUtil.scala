@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo
 import org.bouncycastle.openssl.PEMParser
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter
 import org.enterprisedlt.client.assets.FabricPlatform
+import org.enterprisedlt.spec.BinaryCodec
 import org.hyperledger.fabric.sdk._
 import org.hyperledger.fabric.sdk.identity.X509Enrollment
 import org.hyperledger.fabric.sdk.security.CryptoSuite

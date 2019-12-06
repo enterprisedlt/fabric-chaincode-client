@@ -15,6 +15,7 @@ dependencies {
         exclude group: 'commons-logging', module: 'commons-logging'
     }
     compile 'org.slf4j:slf4j-api:1.7.25'
+    compile 'org.enterprisedlt.general:contract-spec:1.0.0'
 
     // testing libraries
     testCompile 'junit:junit:4.12'
