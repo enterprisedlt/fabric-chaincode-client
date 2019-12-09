@@ -16,6 +16,7 @@ dependencies {
     }
     compile 'org.slf4j:slf4j-api:1.7.25'
     compile 'org.enterprisedlt.general:contract-spec:1.0.0'
+    compile 'org.enterprisedlt.general:codecs:1.0.0'
 
     // testing libraries
     testCompile 'junit:junit:4.12'
@@ -26,7 +27,7 @@ repositories {
     mavenLocal()
     mavenCentral()
     jcenter()
-    maven { url 'https://dl.bintray.com/enterprisedlt/fabric' }
+    maven { url 'https://dl.bintray.com/enterprisedlt/general' }
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
