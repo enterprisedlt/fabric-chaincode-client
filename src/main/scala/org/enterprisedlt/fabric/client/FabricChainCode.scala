@@ -94,16 +94,16 @@ class FabricChainCode(
                     val returnTypes = parameterizedType.getActualTypeArguments
                     val ErrorType = returnTypes(0).asInstanceOf[Class[_]]
                     val ResultType = returnTypes(1).asInstanceOf[Class[_]]
+                    val (parameters, transient) = parseArgs(method, args)
                     method.getAnnotation(classOf[ContractOperation]).value() match {
                         case OperationType.Query =>
-                            val (parameters, transient) = parseArgs(method, args)
                             rawQuery(function, parameters.map(codec.encode), transient.mapValues(codec.encode)) match {
                                 case ee: ExecutionError[_, _] => ee
                                 case ErrorResult(error) => ErrorResult(codec.decode(error, ErrorType))
                                 case Success(value) => Success(codec.decode(value, ResultType))
                             }
+
                         case OperationType.Invoke =>
-                            val (parameters, transient) = parseArgs(method, args)
                             rawInvoke(function, parameters.map(codec.encode), transient.mapValues(codec.encode)) match {
                                 case ee: ExecutionError[_, _] => ee
                                 case ErrorResult(error) => ErrorResult(codec.decode(error, ErrorType))
@@ -122,23 +122,19 @@ class FabricChainCode(
 
     def parseArgs(method: Method, args: Array[AnyRef]): (Array[AnyRef], Map[String, AnyRef]) =
         method
-          .getParameters
-          .zip(args)
-          .map { case (p, value) =>
-              (p.getName, value, p.getType, p.isAnnotationPresent(classOf[Transient]))
-          }
-          .foldRight((Array.empty[AnyRef], Map.empty[String, AnyRef])) { case (current, (parameters, transient)) =>
-              if (current._4) { // if transient put it to transient
-                  (
-                    parameters,
-                    transient + (current._1 -> current._2)
-                  )
-              } else { // if not -> to parameters
-                  (
-                    parameters :+ current._2,
-                    transient
-                  )
-              }
+          .getParameters.zip(args)
+          .foldRight((Array.empty[AnyRef], Map.empty[String, AnyRef])) {
+              case ((parameter, value), (parameters, transient)) =>
+                  if (parameter.isAnnotationPresent(classOf[Transient]))
+                      (
+                        parameters,
+                        transient + (parameter.getName -> value) // put transient to transient map
+                      )
+                  else
+                      (
+                        parameters :+ value, // put non transient to parameters
+                        transient
+                      )
           }
 
 }
