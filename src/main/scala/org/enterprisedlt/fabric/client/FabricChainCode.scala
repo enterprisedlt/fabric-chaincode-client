@@ -3,7 +3,7 @@ package org.enterprisedlt.fabric.client
 import java.lang.reflect.{InvocationHandler, Method, ParameterizedType, Proxy => JProxy}
 import java.util.concurrent.CompletableFuture
 
-import org.enterprisedlt.spec._
+import org.enterprisedlt.spec.{BinaryCodec, ContractOperation, ContractResult, ContractResultConversions, ErrorResult, ExecutionError, OperationType, Success}
 import org.hyperledger.fabric.sdk._
 
 import scala.collection.JavaConverters._
@@ -106,7 +106,7 @@ class FabricChainCode(
                                 case ee: ExecutionError[_, _] => ee
                                 case ErrorResult(error) => ErrorResult(codec.decode(error, ErrorType))
                                 case Success(value) =>
-                                    ContractResultConversions.Try2QueryResult(
+                                    ContractResultConversions.Try2Result(
                                         Try(value.get()) // await for result
                                           .map(x => codec.decode(x, ResultType))
                                     )
