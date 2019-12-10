@@ -3,7 +3,7 @@ package org.enterprisedlt.fabric.client
 import java.lang.reflect.{InvocationHandler, Method, ParameterizedType, Proxy => JProxy}
 import java.util.concurrent.CompletableFuture
 
-import org.enterprisedlt.spec.{BinaryCodec, ContractOperation, ContractResult, ContractResultConversions, ErrorResult, ExecutionError, OperationType, Success}
+import org.enterprisedlt.spec._
 import org.hyperledger.fabric.sdk._
 
 import scala.collection.JavaConverters._
@@ -96,13 +96,15 @@ class FabricChainCode(
                     val ResultType = returnTypes(1).asInstanceOf[Class[_]]
                     method.getAnnotation(classOf[ContractOperation]).value() match {
                         case OperationType.Query =>
-                            rawQuery(function, args.map(codec.encode)) match {
+                            val (parameters, transient) = parseArgs(method, args)
+                            rawQuery(function, parameters.map(codec.encode), transient.mapValues(codec.encode)) match {
                                 case ee: ExecutionError[_, _] => ee
                                 case ErrorResult(error) => ErrorResult(codec.decode(error, ErrorType))
                                 case Success(value) => Success(codec.decode(value, ResultType))
                             }
                         case OperationType.Invoke =>
-                            rawInvoke(function, args.map(codec.encode)) match {
+                            val (parameters, transient) = parseArgs(method, args)
+                            rawInvoke(function, parameters.map(codec.encode), transient.mapValues(codec.encode)) match {
                                 case ee: ExecutionError[_, _] => ee
                                 case ErrorResult(error) => ErrorResult(codec.decode(error, ErrorType))
                                 case Success(value) =>
@@ -117,5 +119,26 @@ class FabricChainCode(
             }
         }
     }
+
+    def parseArgs(method: Method, args: Array[AnyRef]): (Array[AnyRef], Map[String, AnyRef]) =
+        method
+          .getParameters
+          .zip(args)
+          .map { case (p, value) =>
+              (p.getName, value, p.getType, p.isAnnotationPresent(classOf[Transient]))
+          }
+          .foldRight((Array.empty[AnyRef], Map.empty[String, AnyRef])) { case (current, (parameters, transient)) =>
+              if (current._4) { // if transient put it to transient
+                  (
+                    parameters,
+                    transient + (current._1 -> current._2)
+                  )
+              } else { // if not -> to parameters
+                  (
+                    parameters :+ current._2,
+                    transient
+                  )
+              }
+          }
 
 }
