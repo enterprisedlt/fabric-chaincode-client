@@ -123,18 +123,12 @@ class FabricChainCode(
     def parseArgs(method: Method, args: Array[AnyRef]): (Array[AnyRef], Map[String, AnyRef]) =
         method
           .getParameters.zip(args)
-          .foldRight((Array.empty[AnyRef], Map.empty[String, AnyRef])) {
-              case ((parameter, value), (parameters, transient)) =>
+          .foldLeft((Array.empty[AnyRef], Map.empty[String, AnyRef])) {
+              case ((arguments, transient), (parameter, value)) =>
                   if (parameter.isAnnotationPresent(classOf[Transient]))
-                      (
-                        parameters,
-                        transient + (parameter.getName -> value) // put transient to transient map
-                      )
+                      (arguments, transient + (parameter.getName -> value)) // put transient to transient map
                   else
-                      (
-                        parameters :+ value, // put non transient to parameters
-                        transient
-                      )
+                      (arguments :+ value, transient) // put non transient to parameters
           }
 
 }
