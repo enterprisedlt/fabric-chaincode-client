@@ -15,7 +15,8 @@ dependencies {
         exclude group: 'commons-logging', module: 'commons-logging'
     }
     compile 'org.slf4j:slf4j-api:1.7.25'
-    compile 'org.enterprisedlt.general:codecs:1.0.1-RC1'
+    compile 'org.enterprisedlt.general:codecs:1.0.1-RC2'
+
 
     // testing libraries
     testCompile 'junit:junit:4.12'

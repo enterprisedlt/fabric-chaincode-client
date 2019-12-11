@@ -21,7 +21,7 @@ class FabricChainCode(
 ) {
     type TransactionEvent = BlockEvent#TransactionEvent
 
-    def rawQuery(function: String, args: Array[Array[Byte]], transient: Map[String, Array[Byte]] = Map.empty): ContractResult[Array[Byte], Array[Byte]] = {
+    def rawQuery(function: String, args: Array[Array[Byte]], transient: Map[String, Array[Byte]] = Map.empty): ContractResult[Array[Byte]] = {
         val request = fabricClient.newQueryProposalRequest()
         request.setChaincodeID(fabricChainCodeID)
         request.setFcn(function)
@@ -33,13 +33,13 @@ class FabricChainCode(
         val responsesByStatus = responses.groupBy { response => response.getStatus }
         val failed = responsesByStatus.getOrElse(ChaincodeResponse.Status.FAILURE, List.empty)
         if (failed.nonEmpty) {
-            ErrorResult(extractPayload(failed.head))
+            Left(extractErrorMessage(failed.head))
         } else {
-            Success(extractPayload(responses.head))
+            Right(extractPayload(responses.head))
         }
     }
 
-    def rawInvoke(function: String, args: Array[Array[Byte]], transient: Map[String, Array[Byte]] = Map.empty): ContractResult[Array[Byte], CompletableFuture[Array[Byte]]] = {
+    def rawInvoke(function: String, args: Array[Array[Byte]], transient: Map[String, Array[Byte]] = Map.empty): ContractResult[CompletableFuture[Array[Byte]]] = {
         val request = fabricClient.newTransactionProposalRequest()
         request.setChaincodeID(fabricChainCodeID)
         request.setFcn(function)
@@ -53,13 +53,13 @@ class FabricChainCode(
             val responsesByStatus = responses.asScala.groupBy(_.getStatus)
             val failed = responsesByStatus.getOrElse(ChaincodeResponse.Status.FAILURE, List.empty)
             if (failed.nonEmpty) {
-                ErrorResult(extractPayload(failed.head))
+                Left(extractErrorMessage(failed.head))
             }
             else {
-                ExecutionError(s"Got inconsistent proposal responses [${responsesConsistencySets.size}]")
+                Left(s"Got inconsistent proposal responses [${responsesConsistencySets.size}]")
             }
         } else {
-            Success(
+            Right(
                 fabricChannel
                   .sendTransaction(responses, fabricClient.getUserContext)
                   .thenApply(
@@ -79,6 +79,13 @@ class FabricChainCode(
           .flatMap(r => Option(r.toByteArray))
           .getOrElse(Array.empty)
 
+    private def extractErrorMessage(response: ProposalResponse): String =
+        Option(response.getProposalResponse)
+          .flatMap(r => Option(r.getResponse))
+          .flatMap(r => Option(r.getMessage))
+          .getOrElse("General error occurred")
+
+
     def as[T: ClassTag]: T = {
         val clz = classTag[T].runtimeClass.asInstanceOf[Class[T]]
         JProxy
@@ -92,28 +99,19 @@ class FabricChainCode(
             method.getGenericReturnType match {
                 case parameterizedType: ParameterizedType =>
                     val returnTypes = parameterizedType.getActualTypeArguments
-                    val ErrorType = returnTypes(0).asInstanceOf[Class[_]]
-                    val ResultType = returnTypes(1).asInstanceOf[Class[_]]
+                    val ResultType = returnTypes(0).asInstanceOf[Class[_ <: AnyRef]]
                     val (parameters, transient) = parseArgs(method, args)
-                    method.getAnnotation(classOf[ContractOperation]).value() match {
-                        case OperationType.Query =>
-                            rawQuery(function, parameters.map(codec.encode), transient.mapValues(codec.encode)) match {
-                                case ee: ExecutionError[_, _] => ee
-                                case ErrorResult(error) => ErrorResult(codec.decode(error, ErrorType))
-                                case Success(value) => Success(codec.decode(value, ResultType))
-                            }
+                        method.getAnnotation(classOf[ContractOperation]).value() match {
+                            case OperationType.Query =>
+                                rawQuery(function, parameters.map(codec.encode), transient.mapValues(codec.encode))
+                                  .map(value => codec.decode(value, ResultType))
 
-                        case OperationType.Invoke =>
-                            rawInvoke(function, parameters.map(codec.encode), transient.mapValues(codec.encode)) match {
-                                case ee: ExecutionError[_, _] => ee
-                                case ErrorResult(error) => ErrorResult(codec.decode(error, ErrorType))
-                                case Success(value) =>
-                                    ContractResultConversions.Try2Result(
-                                        Try(value.get()) // await for result
-                                          .map(x => codec.decode(x, ResultType))
-                                    )
-                            }
-                    }
+                            case OperationType.Invoke =>
+                                rawInvoke(function, parameters.map(codec.encode), transient.mapValues(codec.encode))
+                                  .flatMap(value => Try(value.get()).toEither.left.map(_.getMessage))
+                                  .map(value => codec.decode(value, ResultType))
+                        }
+
                 case other =>
                     throw new Exception(s"Unsupported return type: ${other.getTypeName}")
             }
