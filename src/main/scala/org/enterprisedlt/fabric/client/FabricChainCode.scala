@@ -100,17 +100,17 @@ class FabricChainCode(
                 case parameterizedType: ParameterizedType =>
                     val returnTypes = parameterizedType.getActualTypeArguments
                     val ResultType = returnTypes(0).asInstanceOf[Class[_ <: AnyRef]]
-                    val (parameters, transient) = parseArgs(method, args)
-                        method.getAnnotation(classOf[ContractOperation]).value() match {
-                            case OperationType.Query =>
-                                rawQuery(function, parameters.map(codec.encode), transient.mapValues(codec.encode))
-                                  .map(value => codec.decode(value, ResultType))
+                    val (parameters, transient) = parseArgs(method, Option(args).getOrElse(Array.empty))
+                    method.getAnnotation(classOf[ContractOperation]).value() match {
+                        case OperationType.Query =>
+                            rawQuery(function, parameters.map(codec.encode), transient.mapValues(codec.encode))
+                              .map(value => codec.decode(value, ResultType))
 
-                            case OperationType.Invoke =>
-                                rawInvoke(function, parameters.map(codec.encode), transient.mapValues(codec.encode))
-                                  .flatMap(value => Try(value.get()).toEither.left.map(_.getMessage))
-                                  .map(value => codec.decode(value, ResultType))
-                        }
+                        case OperationType.Invoke =>
+                            rawInvoke(function, parameters.map(codec.encode), transient.mapValues(codec.encode))
+                              .flatMap(value => Try(value.get()).toEither.left.map(_.getMessage))
+                              .map(value => codec.decode(value, ResultType))
+                    }
 
                 case other =>
                     throw new Exception(s"Unsupported return type: ${other.getTypeName}")
@@ -119,8 +119,9 @@ class FabricChainCode(
     }
 
     def parseArgs(method: Method, args: Array[AnyRef]): (Array[AnyRef], Map[String, AnyRef]) =
-        method
-          .getParameters.zip(args)
+        Option(method.getParameters)
+          .getOrElse(Array.empty)
+          .zip(args)
           .foldLeft((Array.empty[AnyRef], Map.empty[String, AnyRef])) {
               case ((arguments, transient), (parameter, value)) =>
                   if (parameter.isAnnotationPresent(classOf[Transient]))
