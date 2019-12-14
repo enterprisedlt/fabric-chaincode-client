@@ -99,17 +99,17 @@ class FabricChainCode(
             method.getGenericReturnType match {
                 case parameterizedType: ParameterizedType =>
                     val returnTypes = parameterizedType.getActualTypeArguments
-                    val ResultType = returnTypes(1).asInstanceOf[Class[_ <: AnyRef]]
+                    val ResultType = returnTypes(1)
                     val (parameters, transient) = parseArgs(method, Option(args).getOrElse(Array.empty))
                     method.getAnnotation(classOf[ContractOperation]).value() match {
                         case OperationType.Query =>
                             rawQuery(function, parameters.map(codec.encode), transient.mapValues(codec.encode))
-                              .map(value => codec.decode(value, ResultType))
+                              .map(value => codec.decode[AnyRef](value, ResultType))
 
                         case OperationType.Invoke =>
                             rawInvoke(function, parameters.map(codec.encode), transient.mapValues(codec.encode))
                               .flatMap(value => Try(value.get()).toEither.left.map(_.getMessage))
-                              .map(value => codec.decode(value, ResultType))
+                              .map(value => codec.decode[AnyRef](value, ResultType))
                     }
 
                 case other =>
