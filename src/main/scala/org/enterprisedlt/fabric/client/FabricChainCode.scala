@@ -74,10 +74,11 @@ class FabricChainCode(
     }
 
     private def extractPayload(response: ProposalResponse): Array[Byte] =
-        Option(response.getProposalResponse)
-          .flatMap(r => Option(r.getPayload))
-          .flatMap(r => Option(r.toByteArray))
-          .getOrElse(Array.empty)
+            Option(response.getProposalResponse)
+              .flatMap(r => Option(r.getResponse))
+              .flatMap(r => Option(r.getPayload))
+              .flatMap(r => Option(r.toByteArray))
+              .getOrElse(Array.empty)
 
     private def extractErrorMessage(response: ProposalResponse): String =
         Option(response.getProposalResponse)
