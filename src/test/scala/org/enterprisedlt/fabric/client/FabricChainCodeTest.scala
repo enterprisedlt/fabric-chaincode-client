@@ -8,10 +8,10 @@ import org.enterprisedlt.general.gson._
 import org.enterprisedlt.spec.{ContractOperation, ContractResult, OperationType}
 import org.hyperledger.fabric.protos.peer.FabricProposalResponse
 import org.hyperledger.fabric.sdk.transaction.TransactionContext
-import org.hyperledger.fabric.sdk.{BlockEvent, ChaincodeID, ChaincodeResponse, Channel, HFClient, ProposalResponse, ProposalResponseFactory, SDKUtils, TransactionProposalRequest, User}
+import org.hyperledger.fabric.sdk._
 import org.junit.runner.RunWith
-import org.scalatest.FunSuite
 import org.mockito.Mockito._
+import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 
 import scala.collection.JavaConverters._
@@ -42,7 +42,7 @@ class FabricChainCodeTest extends FunSuite {
 
     }
 
-    test("test return Unit") {
+    test("test return Unit with gson codec") {
         val client = mock(classOf[HFClient])
         val usr = mock(classOf[User])
         when(client.getUserContext).thenReturn(usr)
@@ -75,7 +75,40 @@ class FabricChainCodeTest extends FunSuite {
         assert(cc.testReturnUnit(1) == Right(()))
     }
 
-    test("test return Dummy asset") {
+    test("test return Unit with typed codec") {
+        val client = mock(classOf[HFClient])
+        val usr = mock(classOf[User])
+        when(client.getUserContext).thenReturn(usr)
+        val channel = mock(classOf[Channel])
+        val txCtx = mock(classOf[TransactionContext])
+        when(txCtx.getTxID).thenReturn("12345")
+        when(txCtx.getChannelID).thenReturn("channel")
+
+        val propResponse = ProposalResponseFactory.newProposalResponse(txCtx, ChaincodeResponse.Status.SUCCESS.getStatus, "")
+        val tranProReq = TransactionProposalRequest.newInstance(usr)
+        val ccResult = typedCodec.encode(())
+        val protoResponse = FabricProposalResponse.Response.newBuilder()
+          .setPayload(ByteString.copyFrom(ccResult))
+          .build()
+
+        val proposalResponse = FabricProposalResponse.ProposalResponse.newBuilder()
+          .setPayload(ByteString.copyFrom(ccResult))
+          .setResponse(protoResponse)
+          .build()
+
+        propResponse.setProposalResponse(proposalResponse)
+        val responses = List(propResponse).asJava
+        val cc: TestContractSpec = new FabricChainCode(client, channel, chaincodeId, typedCodec).as[TestContractSpec]
+
+        when(client.newTransactionProposalRequest()).thenReturn(tranProReq)
+        when(channel.sendTransactionProposal(tranProReq)).thenReturn(responses)
+        when(channel.sendTransaction(responses, usr))
+          .thenReturn(CompletableFuture.completedFuture(null.asInstanceOf[BlockEvent#TransactionEvent]))
+
+        assert(cc.testReturnUnit(1) == Right(()))
+    }
+
+    test("test return Dummy asset with typed codec") {
         val client = mock(classOf[HFClient])
         val usr = mock(classOf[User])
         when(client.getUserContext).thenReturn(usr)
@@ -108,7 +141,6 @@ class FabricChainCodeTest extends FunSuite {
 
         assert(cc.testReturnDummy(1) == Right(Dummy("x","y")))
     }
-
 }
 
 case class Dummy(
