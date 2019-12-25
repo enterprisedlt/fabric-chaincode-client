@@ -15,12 +15,17 @@ dependencies {
         exclude group: 'commons-logging', module: 'commons-logging'
     }
     compile 'org.slf4j:slf4j-api:1.7.25'
+    compile 'ch.qos.logback:logback-classic:1.2.3'
+    // java chain code uses different logger facades, namely JUL and commons logging ...
+    compile 'org.slf4j:jcl-over-slf4j:1.7.25'
+    compile 'org.slf4j:jul-to-slf4j:1.7.25'
     compile 'org.enterprisedlt.general:codecs:2.0.0-RC2'
 
 
     // testing libraries
     testCompile 'junit:junit:4.12'
     testCompile 'org.scalatest:scalatest_2.12:3.0.5'
+    testCompile 'org.mockito:mockito-core:2.23.0'
 }
 
 repositories {

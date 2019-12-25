@@ -110,7 +110,10 @@ class FabricChainCode(
                         case OperationType.Invoke =>
                             rawInvoke(function, parameters.map(codec.encode), transient.mapValues(codec.encode))
                               .flatMap(value => Try(value.get()).toEither.left.map(_.getMessage))
-                              .map(value => codec.decode[AnyRef](value, ResultType))
+                              .map(value => ResultType.getTypeName match {
+                                  case "scala.runtime.BoxedUnit" => ()
+                                  case _ => codec.decode[AnyRef](value, ResultType)
+                              })
                     }
 
                 case other =>
