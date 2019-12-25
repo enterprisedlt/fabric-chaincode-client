@@ -42,7 +42,7 @@ class FabricChainCodeTest extends FunSuite {
 
     }
 
-    test("test return Unit with gson codec") {
+    test("should return Unit with gson codec") {
         val client = mock(classOf[HFClient])
         val usr = mock(classOf[User])
         when(client.getUserContext).thenReturn(usr)
@@ -75,7 +75,7 @@ class FabricChainCodeTest extends FunSuite {
         assert(cc.testReturnUnit(1) == Right(()))
     }
 
-    test("test return Unit with typed codec") {
+    test("should return Unit with typed codec") {
         val client = mock(classOf[HFClient])
         val usr = mock(classOf[User])
         when(client.getUserContext).thenReturn(usr)
@@ -108,7 +108,7 @@ class FabricChainCodeTest extends FunSuite {
         assert(cc.testReturnUnit(1) == Right(()))
     }
 
-    test("test return Dummy asset with typed codec") {
+    test("should return Dummy asset with typed codec") {
         val client = mock(classOf[HFClient])
         val usr = mock(classOf[User])
         when(client.getUserContext).thenReturn(usr)
