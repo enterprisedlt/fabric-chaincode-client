@@ -1,10 +1,10 @@
 package org.enterprisedlt.fabric.client
 
-import java.util
 import java.util.concurrent.CompletableFuture
 
 import com.google.protobuf.ByteString
 import org.enterprisedlt.general.codecs.GsonCodec
+import org.enterprisedlt.general.gson._
 import org.enterprisedlt.spec.{ContractOperation, ContractResult, OperationType}
 import org.hyperledger.fabric.protos.peer.FabricProposalResponse
 import org.hyperledger.fabric.sdk.transaction.TransactionContext
@@ -25,23 +25,22 @@ class FabricChainCodeTest extends FunSuite {
       .setName("channel")
       .setVersion("1.0")
       .setPath("/dev/null").build()
-    private val codec = GsonCodec()
+    private val gsonCodec = GsonCodec()
+    private val typedCodec = GsonCodec(gsonOptions = _.encodeTypes(typeFieldName = "#TYPE#", typeNamesResolver = NamesResolver))
+    private val NamesResolver = new TypeNameResolver() {
+        override def resolveTypeByName(name: String): Class[_] = if ("dummy" equals name) classOf[Dummy] else throw new IllegalStateException(s"Unexpected class name: $name")
 
-    //        private val NamesResolver = new TypeNameResolver() {
-    //            override def resolveTypeByName(name: String): Class[_] = if ("dummy" equals name) classOf[Dummy] else throw new IllegalStateException(s"Unexpected class name: $name")
-    //
-    //            override def resolveNameByType(clazz: Class[_]): String = "dummy"
-    //        }
-
-
-    private val fabricChainCode = mock(classOf[FabricChainCode])
+        override def resolveNameByType(clazz: Class[_]): String = "dummy"
+    }
 
     trait TestContractSpec {
         @ContractOperation(OperationType.Invoke)
-        def testPut(tokenType: Int): ContractResult[Unit]
+        def testReturnUnit(tokenType: Int): ContractResult[Unit]
+
+        @ContractOperation(OperationType.Invoke)
+        def testReturnDummy(tokenType: Int): ContractResult[Dummy]
 
     }
-
 
     test("test return Unit") {
         val client = mock(classOf[HFClient])
@@ -54,7 +53,7 @@ class FabricChainCodeTest extends FunSuite {
 
         val propResponse = ProposalResponseFactory.newProposalResponse(txCtx, ChaincodeResponse.Status.SUCCESS.getStatus, "")
         val tranProReq = TransactionProposalRequest.newInstance(usr)
-        val ccResult = codec.encode(())
+        val ccResult = gsonCodec.encode(())
         val protoResponse = FabricProposalResponse.Response.newBuilder()
           .setPayload(ByteString.copyFrom(ccResult))
           .build()
@@ -66,17 +65,17 @@ class FabricChainCodeTest extends FunSuite {
 
         propResponse.setProposalResponse(proposalResponse)
         val responses = List(propResponse).asJava
-        val cc: TestContractSpec = new FabricChainCode(client, channel, chaincodeId, codec).as[TestContractSpec]
+        val cc: TestContractSpec = new FabricChainCode(client, channel, chaincodeId, gsonCodec).as[TestContractSpec]
 
         when(client.newTransactionProposalRequest()).thenReturn(tranProReq)
         when(channel.sendTransactionProposal(tranProReq)).thenReturn(responses)
         when(channel.sendTransaction(responses, usr))
           .thenReturn(CompletableFuture.completedFuture(null.asInstanceOf[BlockEvent#TransactionEvent]))
 
-        assert(cc.testPut(1) == Right(()))
+        assert(cc.testReturnUnit(1) == Right(()))
     }
 
-    test("test return Dummy") {
+    test("test return Dummy asset") {
         val client = mock(classOf[HFClient])
         val usr = mock(classOf[User])
         when(client.getUserContext).thenReturn(usr)
@@ -87,7 +86,8 @@ class FabricChainCodeTest extends FunSuite {
 
         val propResponse = ProposalResponseFactory.newProposalResponse(txCtx, ChaincodeResponse.Status.SUCCESS.getStatus, "")
         val tranProReq = TransactionProposalRequest.newInstance(usr)
-        val ccResult = codec.encode(())
+        val dummy = Dummy("x","y")
+        val ccResult = typedCodec.encode(dummy)
         val protoResponse = FabricProposalResponse.Response.newBuilder()
           .setPayload(ByteString.copyFrom(ccResult))
           .build()
@@ -99,14 +99,19 @@ class FabricChainCodeTest extends FunSuite {
 
         propResponse.setProposalResponse(proposalResponse)
         val responses = List(propResponse).asJava
-        val cc: TestContractSpec = new FabricChainCode(client, channel, chaincodeId, codec).as[TestContractSpec]
+        val cc: TestContractSpec = new FabricChainCode(client, channel, chaincodeId, typedCodec).as[TestContractSpec]
 
         when(client.newTransactionProposalRequest()).thenReturn(tranProReq)
         when(channel.sendTransactionProposal(tranProReq)).thenReturn(responses)
         when(channel.sendTransaction(responses, usr))
           .thenReturn(CompletableFuture.completedFuture(null.asInstanceOf[BlockEvent#TransactionEvent]))
 
-        assert(cc.testPut(1) == Right(()))
+        assert(cc.testReturnDummy(1) == Right(Dummy("x","y")))
     }
 
 }
+
+case class Dummy(
+    name: String,
+    value: String
+)
