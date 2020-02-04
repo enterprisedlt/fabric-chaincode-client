@@ -1,7 +1,9 @@
 package org.enterprisedlt.fabric.client
 
 import org.enterprisedlt.spec.BinaryCodec
-import org.hyperledger.fabric.sdk.{ChaincodeID, Channel, HFClient}
+import org.hyperledger.fabric.sdk.{BlockListener, ChaincodeID, Channel, HFClient}
+
+import scala.util.Try
 
 /**
  * @author Alexey Polubelov
@@ -17,4 +19,9 @@ class FabricChannel(
             ChaincodeID.newBuilder().setName(name).build(),
             codec
         )
+
+    //=========================================================================
+    def setupBlockListener(listener: BlockListener): Try[String] = Try {
+        fabricChannel.registerBlockListener(listener)
+    }
 }
