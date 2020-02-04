@@ -21,7 +21,7 @@ class FabricChannel(
         )
 
     //=========================================================================
-    def setupBlockListener(listener: BlockListener): Either[String, String] = Try {
+    def setupBlockListener(listener: BlockListener): Try[String] = Try {
         fabricChannel.registerBlockListener(listener)
-    }.toEither.left.map(_.getMessage)
+    }
 }
