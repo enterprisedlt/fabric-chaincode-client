@@ -1,8 +1,11 @@
 package org.enterprisedlt.fabric.client
 
+import java.util
 import java.util.Properties
 
 import org.enterprisedlt.fabric.client.configuration._
+import org.hyperledger.fabric.sdk.Channel.PeerOptions.createPeerOptions
+import org.hyperledger.fabric.sdk.Peer.PeerRole
 import org.hyperledger.fabric.sdk.security.CryptoSuite
 import org.hyperledger.fabric.sdk.{HFClient, Orderer, Peer, User}
 import org.slf4j.LoggerFactory
@@ -12,7 +15,8 @@ import org.slf4j.LoggerFactory
  */
 class FabricClient(
     user: User,
-    network: Network
+    network: Network,
+    serviceDiscovery: Boolean
 ) {
     private val logger = LoggerFactory.getLogger(this.getClass)
     private val cryptoSuite = CryptoSuite.Factory.getCryptoSuite()
@@ -31,10 +35,20 @@ class FabricClient(
             channel.addOrderer(mkOSN(config))
         }
         network.peers.foreach { config =>
-            channel.addPeer(mkPeer(config))
+            if (!serviceDiscovery) {
+                channel.addPeer(mkPeer(config))
+            } else {
+                val peerOptions = createPeerOptions
+                  .setPeerRoles(util.EnumSet.of(
+                      PeerRole.SERVICE_DISCOVERY,
+                      PeerRole.LEDGER_QUERY,
+                      PeerRole.EVENT_SOURCE,
+                      PeerRole.CHAINCODE_QUERY))
+                channel.addPeer(mkPeer(config), peerOptions)
+            }
         }
         channel.initialize()
-        new FabricChannel(fabricClient, channel)
+        new FabricChannel(fabricClient, channel, serviceDiscovery)
     }
 
     //=========================================================================

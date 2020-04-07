@@ -10,14 +10,16 @@ import scala.util.Try
  */
 class FabricChannel(
     fabricClient: HFClient,
-    fabricChannel: Channel
+    fabricChannel: Channel,
+    serviceDiscovery: Boolean
 ) {
     def getChainCode(name: String, codec: BinaryCodec /* TODO: , endorsementTimeout: Int = */): FabricChainCode =
         new FabricChainCode(
             fabricClient,
             fabricChannel,
             ChaincodeID.newBuilder().setName(name).build(),
-            codec
+            codec,
+            serviceDiscovery
         )
 
     //=========================================================================

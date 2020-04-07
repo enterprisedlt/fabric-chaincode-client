@@ -4,6 +4,7 @@ import java.lang.reflect.{InvocationHandler, Method, ParameterizedType, Proxy =>
 import java.util.concurrent.CompletableFuture
 
 import org.enterprisedlt.spec._
+import org.hyperledger.fabric.sdk.Channel.DiscoveryOptions.createDiscoveryOptions
 import org.hyperledger.fabric.sdk._
 
 import scala.collection.JavaConverters._
@@ -17,7 +18,8 @@ class FabricChainCode(
     fabricClient: HFClient,
     fabricChannel: Channel,
     fabricChainCodeID: ChaincodeID,
-    codec: BinaryCodec
+    codec: BinaryCodec,
+    serviceDiscovery: Boolean
 ) {
     type TransactionEvent = BlockEvent#TransactionEvent
 
@@ -47,7 +49,13 @@ class FabricChainCode(
         if (transient.nonEmpty) {
             request.setTransientMap(transient.asJava)
         }
-        val responses = fabricChannel.sendTransactionProposal(request)
+        val responses = if (serviceDiscovery) {
+            fabricChannel.sendTransactionProposalToEndorsers(
+                request,
+                createDiscoveryOptions()
+                  .setEndorsementSelector(ServiceDiscovery.EndorsementSelector.ENDORSEMENT_SELECTION_RANDOM)
+                  .setForceDiscovery(true))
+        } else fabricChannel.sendTransactionProposal(request)
         val responsesConsistencySets = SDKUtils.getProposalConsistencySets(responses)
         if (responsesConsistencySets.size() != 1) {
             val responsesByStatus = responses.asScala.groupBy(_.getStatus)
