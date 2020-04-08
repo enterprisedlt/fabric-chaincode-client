@@ -7,8 +7,8 @@ import org.enterprisedlt.general.codecs.GsonCodec
 import org.enterprisedlt.general.gson._
 import org.enterprisedlt.spec.{BinaryCodec, ContractOperation, ContractResult, OperationType}
 import org.hyperledger.fabric.protos.peer.FabricProposalResponse
-import org.hyperledger.fabric.sdk.transaction.TransactionContext
 import org.hyperledger.fabric.sdk._
+import org.hyperledger.fabric.sdk.transaction.TransactionContext
 import org.junit.runner.RunWith
 import org.mockito.Mockito._
 import org.scalatest.FunSuite
@@ -37,6 +37,7 @@ class FabricChainCodeTest extends FunSuite {
     }
     private val typedGSONCodec = GsonCodec(gsonOptions = _.encodeTypes(typeFieldName = "#TYPE#", typeNamesResolver = NamesResolver))
 
+    private val chaincodeServiceDiscovery = false
 
     trait TestContractSpec {
         @ContractOperation(OperationType.Invoke)
@@ -110,7 +111,7 @@ class FabricChainCodeTest extends FunSuite {
         when(channel.sendTransaction(responses, usr))
           .thenReturn(CompletableFuture.completedFuture(null.asInstanceOf[BlockEvent#TransactionEvent]))
 
-        new FabricChainCode(client, channel, chainCodeId, codec)
+        new FabricChainCode(client, channel, chainCodeId, codec, chaincodeServiceDiscovery)
     }
 }
 
