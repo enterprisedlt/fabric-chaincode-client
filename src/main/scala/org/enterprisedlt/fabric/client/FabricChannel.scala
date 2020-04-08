@@ -13,13 +13,13 @@ class FabricChannel(
     fabricChannel: Channel,
     serviceDiscovery: Boolean
 ) {
-    def getChainCode(name: String, codec: BinaryCodec /* TODO: , endorsementTimeout: Int = */): FabricChainCode =
+    def getChainCode(name: String, codec: BinaryCodec, chaincodeServiceDiscovery: Boolean /* TODO: , endorsementTimeout: Int = */): FabricChainCode =
         new FabricChainCode(
             fabricClient,
             fabricChannel,
             ChaincodeID.newBuilder().setName(name).build(),
             codec,
-            serviceDiscovery
+            chaincodeServiceDiscovery
         )
 
     //=========================================================================

@@ -6,5 +6,6 @@ package org.enterprisedlt.fabric.client.configuration
 case class PeerConfig(
     name: String,
     address: String,
+    peerServiceDiscovery: Boolean,
     setting: ConnectionSettings = Plain
 )

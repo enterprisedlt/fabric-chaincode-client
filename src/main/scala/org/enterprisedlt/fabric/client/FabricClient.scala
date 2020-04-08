@@ -15,8 +15,7 @@ import org.slf4j.LoggerFactory
  */
 class FabricClient(
     user: User,
-    network: Network,
-    serviceDiscovery: Boolean
+    network: Network
 ) {
     private val logger = LoggerFactory.getLogger(this.getClass)
     private val cryptoSuite = CryptoSuite.Factory.getCryptoSuite()
@@ -35,7 +34,7 @@ class FabricClient(
             channel.addOrderer(mkOSN(config))
         }
         network.peers.foreach { config =>
-            if (!serviceDiscovery) {
+            if (!config.peerServiceDiscovery) {
                 channel.addPeer(mkPeer(config))
             } else {
                 val peerOptions = createPeerOptions
@@ -48,7 +47,7 @@ class FabricClient(
             }
         }
         channel.initialize()
-        new FabricChannel(fabricClient, channel, serviceDiscovery)
+        new FabricChannel(fabricClient, channel)
     }
 
     //=========================================================================

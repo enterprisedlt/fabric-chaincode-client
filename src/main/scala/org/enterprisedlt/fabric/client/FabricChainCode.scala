@@ -19,7 +19,7 @@ class FabricChainCode(
     fabricChannel: Channel,
     fabricChainCodeID: ChaincodeID,
     codec: BinaryCodec,
-    serviceDiscovery: Boolean
+    chaincodeServiceDiscovery: Boolean
 ) {
     type TransactionEvent = BlockEvent#TransactionEvent
 
@@ -49,7 +49,7 @@ class FabricChainCode(
         if (transient.nonEmpty) {
             request.setTransientMap(transient.asJava)
         }
-        val responses = if (serviceDiscovery) {
+        val responses = if (chaincodeServiceDiscovery) {
             fabricChannel.sendTransactionProposalToEndorsers(
                 request,
                 createDiscoveryOptions()
