@@ -32,13 +32,18 @@ class FabricChainCode(
             request.setTransientMap(transient.asJava)
         }
         val responses = fabricChannel.queryByChaincode(request).asScala
-        val responsesByStatus = responses.groupBy { response => response.getStatus }
+        val responsesByStatus = responses.groupBy(_.getStatus)
         val failed = responsesByStatus.getOrElse(ChaincodeResponse.Status.FAILURE, List.empty)
         val succeeded = responsesByStatus.getOrElse(ChaincodeResponse.Status.SUCCESS, List.empty)
         if (failed.nonEmpty && succeeded.isEmpty) {
             Left(extractErrorMessage(failed.head))
         } else {
-            Right(extractPayload(succeeded.head))
+            val succeddedConsistencySet = SDKUtils.getProposalConsistencySets(succeeded.asJavaCollection)
+            if (succeddedConsistencySet.size() != 1) {
+                Left(s"Got inconsistent proposal responses [${succeddedConsistencySet.size}]")
+            } else {
+                Right(extractPayload(succeeded.head))
+            }
         }
     }
 
