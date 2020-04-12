@@ -34,10 +34,11 @@ class FabricChainCode(
         val responses = fabricChannel.queryByChaincode(request).asScala
         val responsesByStatus = responses.groupBy { response => response.getStatus }
         val failed = responsesByStatus.getOrElse(ChaincodeResponse.Status.FAILURE, List.empty)
-        if (failed.nonEmpty) {
+        val succeeded = responsesByStatus.getOrElse(ChaincodeResponse.Status.SUCCESS, List.empty)
+        if (failed.nonEmpty && succeeded.isEmpty) {
             Left(extractErrorMessage(failed.head))
         } else {
-            Right(extractPayload(responses.head))
+            Right(extractPayload(succeeded.head))
         }
     }
 
@@ -82,11 +83,11 @@ class FabricChainCode(
     }
 
     private def extractPayload(response: ProposalResponse): Array[Byte] =
-            Option(response.getProposalResponse)
-              .flatMap(r => Option(r.getResponse))
-              .flatMap(r => Option(r.getPayload))
-              .flatMap(r => Option(r.toByteArray))
-              .getOrElse(Array.empty)
+        Option(response.getProposalResponse)
+          .flatMap(r => Option(r.getResponse))
+          .flatMap(r => Option(r.getPayload))
+          .flatMap(r => Option(r.toByteArray))
+          .getOrElse(Array.empty)
 
     private def extractErrorMessage(response: ProposalResponse): String =
         Option(response.getProposalResponse)
