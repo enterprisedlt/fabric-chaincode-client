@@ -5,10 +5,11 @@ import java.util.Properties
 
 import org.enterprisedlt.fabric.client.configuration._
 import org.hyperledger.fabric.sdk.Channel.PeerOptions.createPeerOptions
-import org.hyperledger.fabric.sdk.Peer.PeerRole
 import org.hyperledger.fabric.sdk.security.CryptoSuite
 import org.hyperledger.fabric.sdk.{HFClient, Orderer, Peer, User}
 import org.slf4j.LoggerFactory
+
+import scala.collection.JavaConverters._
 
 /**
  * @author Alexey Polubelov
@@ -34,15 +35,15 @@ class FabricClient(
             channel.addOrderer(mkOSN(config))
         }
         network.peers.foreach { config =>
-            if (!config.peerServiceDiscovery) {
+            if (config.peerRoles.isEmpty) {
                 channel.addPeer(mkPeer(config))
             } else {
+                val peerRolesSet = util.EnumSet
+                  .copyOf(
+                      asJavaCollection(config.peerRoles)
+                  )
                 val peerOptions = createPeerOptions
-                  .setPeerRoles(util.EnumSet.of(
-                      PeerRole.SERVICE_DISCOVERY,
-                      PeerRole.LEDGER_QUERY,
-                      PeerRole.EVENT_SOURCE,
-                      PeerRole.CHAINCODE_QUERY))
+                  .setPeerRoles(peerRolesSet)
                 channel.addPeer(mkPeer(config), peerOptions)
             }
         }
