@@ -1,10 +1,13 @@
 package org.enterprisedlt.fabric.client.configuration
 
+import org.hyperledger.fabric.sdk.Peer.PeerRole
+
 /**
  * @author Alexey Polubelov
  */
 case class PeerConfig(
     name: String,
     address: String,
-    setting: ConnectionSettings = Plain
+    setting: ConnectionSettings = Plain,
+    peerRoles: Array[PeerRole] = Array.empty
 )

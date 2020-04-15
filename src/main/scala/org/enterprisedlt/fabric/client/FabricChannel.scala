@@ -12,16 +12,18 @@ class FabricChannel(
     fabricClient: HFClient,
     fabricChannel: Channel
 ) {
-    def getChainCode(name: String, codec: BinaryCodec /* TODO: , endorsementTimeout: Int = */): FabricChainCode =
+    def getChainCode(name: String, codec: BinaryCodec, chaincodeServiceDiscovery: Boolean = false /* TODO: , endorsementTimeout: Int = */): FabricChainCode =
         new FabricChainCode(
             fabricClient,
             fabricChannel,
             ChaincodeID.newBuilder().setName(name).build(),
-            codec
+            codec,
+            chaincodeServiceDiscovery
         )
 
     //=========================================================================
     def setupBlockListener(listener: BlockListener): Try[String] = Try {
         fabricChannel.registerBlockListener(listener)
     }
+
 }
