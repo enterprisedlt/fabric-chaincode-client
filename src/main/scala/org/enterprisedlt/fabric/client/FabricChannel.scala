@@ -1,8 +1,7 @@
 package org.enterprisedlt.fabric.client
 
-import org.enterprisedlt.fabric.client.configuration.OSNConfig
 import org.enterprisedlt.spec.BinaryCodec
-import org.hyperledger.fabric.sdk.{BlockListener, ChaincodeID, Channel, HFClient}
+import org.hyperledger.fabric.sdk._
 
 import scala.util.Try
 
@@ -12,7 +11,7 @@ import scala.util.Try
 class FabricChannel(
     fabricClient: HFClient,
     fabricChannel: Channel,
-    bootstrapOrderers: Array[OSNConfig]
+    bootstrapOrderers: java.util.Collection[Orderer]
 ) {
     def getChainCode(name: String, codec: BinaryCodec, discoveryForEndorsement: Boolean = false, discoveryForOrdering: Boolean = false /* TODO: , endorsementTimeout: Int = */): FabricChainCode =
         new FabricChainCode(

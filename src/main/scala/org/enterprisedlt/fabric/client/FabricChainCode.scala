@@ -3,7 +3,6 @@ package org.enterprisedlt.fabric.client
 import java.lang.reflect.{InvocationHandler, Method, ParameterizedType, Proxy => JProxy}
 import java.util.concurrent.CompletableFuture
 
-import org.enterprisedlt.fabric.client.configuration.OSNConfig
 import org.enterprisedlt.spec._
 import org.hyperledger.fabric.sdk.Channel.DiscoveryOptions.createDiscoveryOptions
 import org.hyperledger.fabric.sdk._
@@ -20,7 +19,7 @@ class FabricChainCode(
     fabricChannel: Channel,
     fabricChainCodeID: ChaincodeID,
     codec: BinaryCodec,
-    bootstrapOrderers: Array[OSNConfig],
+    bootstrapOrderers: java.util.Collection[Orderer],
     discoveryForEndorsement: Boolean,
     discoveryForOrdering: Boolean
 ) {
@@ -79,11 +78,7 @@ class FabricChainCode(
             val orderersToCommit = if (discoveryForOrdering) {
                 fabricChannel.getOrderers
             } else {
-                asJavaCollection(
-                    bootstrapOrderers.map { orderer =>
-                        Util.mkOSN(fabricClient, orderer)
-                    }
-                )
+                bootstrapOrderers
             }
             Right(
                 fabricChannel
