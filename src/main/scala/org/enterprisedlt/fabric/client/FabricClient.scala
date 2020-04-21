@@ -1,12 +1,11 @@
 package org.enterprisedlt.fabric.client
 
 import java.util
-import java.util.Properties
 
 import org.enterprisedlt.fabric.client.configuration._
 import org.hyperledger.fabric.sdk.Channel.PeerOptions.createPeerOptions
 import org.hyperledger.fabric.sdk.security.CryptoSuite
-import org.hyperledger.fabric.sdk.{HFClient, Orderer, Peer, User}
+import org.hyperledger.fabric.sdk.{HFClient, User}
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
@@ -20,7 +19,7 @@ class FabricClient(
 ) {
     private val logger = LoggerFactory.getLogger(this.getClass)
     private val cryptoSuite = CryptoSuite.Factory.getCryptoSuite()
-    private val fabricClient = getHFClient(user)
+    private val fabricClient: HFClient = getHFClient(user)
 
     private def getHFClient(user: User): HFClient = {
         val client = HFClient.createNewInstance()
@@ -32,11 +31,11 @@ class FabricClient(
     def channel(name: String): FabricChannel = {
         val channel = fabricClient.newChannel(name)
         network.ordering.foreach { config =>
-            channel.addOrderer(mkOSN(config))
+            channel.addOrderer(Util.mkOSN(fabricClient, config))
         }
         network.peers.foreach { config =>
             if (config.peerRoles.isEmpty) {
-                channel.addPeer(mkPeer(config))
+                channel.addPeer(Util.mkPeer(fabricClient, config))
             } else {
                 val peerRolesSet = util.EnumSet
                   .copyOf(
@@ -44,34 +43,11 @@ class FabricClient(
                   )
                 val peerOptions = createPeerOptions
                   .setPeerRoles(peerRolesSet)
-                channel.addPeer(mkPeer(config), peerOptions)
+                channel.addPeer(Util.mkPeer(fabricClient, config), peerOptions)
             }
         }
         channel.initialize()
-        new FabricChannel(fabricClient, channel)
+        new FabricChannel(fabricClient, channel, network.ordering)
     }
 
-    //=========================================================================
-    private def mkPeer(config: PeerConfig): Peer = {
-        config.setting match {
-            case Plain =>
-                fabricClient.newPeer(config.name, config.address)
-            case TLS(path) =>
-                val properties = new Properties()
-                properties.put("pemFile", path)
-                fabricClient.newPeer(config.name, config.address, properties)
-        }
-    }
-
-    //=========================================================================
-    private def mkOSN(config: OSNConfig): Orderer = {
-        config.setting match {
-            case Plain =>
-                fabricClient.newOrderer(config.name, config.address)
-            case TLS(path) =>
-                val properties = new Properties()
-                properties.put("pemFile", path)
-                fabricClient.newOrderer(config.name, config.address, properties)
-        }
-    }
 }

@@ -3,6 +3,7 @@ package org.enterprisedlt.fabric.client
 import java.lang.reflect.{InvocationHandler, Method, ParameterizedType, Proxy => JProxy}
 import java.util.concurrent.CompletableFuture
 
+import org.enterprisedlt.fabric.client.configuration.OSNConfig
 import org.enterprisedlt.spec._
 import org.hyperledger.fabric.sdk.Channel.DiscoveryOptions.createDiscoveryOptions
 import org.hyperledger.fabric.sdk._
@@ -19,7 +20,9 @@ class FabricChainCode(
     fabricChannel: Channel,
     fabricChainCodeID: ChaincodeID,
     codec: BinaryCodec,
-    chaincodeServiceDiscovery: Boolean
+    bootstrapOrderers: Array[OSNConfig],
+    discoveryForEndorsement: Boolean,
+    discoveryForOrdering: Boolean
 ) {
     type TransactionEvent = BlockEvent#TransactionEvent
 
@@ -55,7 +58,7 @@ class FabricChainCode(
         if (transient.nonEmpty) {
             request.setTransientMap(transient.asJava)
         }
-        val responses = if (chaincodeServiceDiscovery) {
+        val responses = if (discoveryForEndorsement) {
             fabricChannel.sendTransactionProposalToEndorsers(
                 request,
                 createDiscoveryOptions()
@@ -73,9 +76,18 @@ class FabricChainCode(
                 Left(s"Got inconsistent proposal responses [${responsesConsistencySets.size}]")
             }
         } else {
+            val orderersToCommit = if (discoveryForOrdering) {
+                fabricChannel.getOrderers
+            } else {
+                asJavaCollection(
+                    bootstrapOrderers.map { orderer =>
+                        Util.mkOSN(fabricClient, orderer)
+                    }
+                )
+            }
             Right(
                 fabricChannel
-                  .sendTransaction(responses, fabricClient.getUserContext)
+                  .sendTransaction(responses, orderersToCommit, fabricClient.getUserContext)
                   .thenApply(
                       new ResultOverwrite[TransactionEvent, Array[Byte]](extractPayload(responses.iterator().next()))
                   )

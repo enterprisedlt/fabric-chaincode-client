@@ -3,6 +3,7 @@ package org.enterprisedlt.fabric.client
 import java.util.concurrent.CompletableFuture
 
 import com.google.protobuf.ByteString
+import org.enterprisedlt.fabric.client.configuration.OSNConfig
 import org.enterprisedlt.general.codecs.GsonCodec
 import org.enterprisedlt.general.gson._
 import org.enterprisedlt.spec.{BinaryCodec, ContractOperation, ContractResult, OperationType}
@@ -37,7 +38,11 @@ class FabricChainCodeTest extends FunSuite {
     }
     private val typedGSONCodec = GsonCodec(gsonOptions = _.encodeTypes(typeFieldName = "#TYPE#", typeNamesResolver = NamesResolver))
 
-    private val chaincodeServiceDiscovery = false
+    private val discoveryForEndorsement = false
+    private val discoveryForOrdering = false
+    private val bootstrapOrderers: Array[OSNConfig] = Array(
+        OSNConfig("osn1", "osn1.org1.example.com")
+    )
 
     trait TestContractSpec {
         @ContractOperation(OperationType.Invoke)
@@ -111,7 +116,7 @@ class FabricChainCodeTest extends FunSuite {
         when(channel.sendTransaction(responses, usr))
           .thenReturn(CompletableFuture.completedFuture(null.asInstanceOf[BlockEvent#TransactionEvent]))
 
-        new FabricChainCode(client, channel, chainCodeId, codec, chaincodeServiceDiscovery)
+        new FabricChainCode(client, channel, chainCodeId, codec, bootstrapOrderers, discoveryForEndorsement, discoveryForOrdering)
     }
 }
 
