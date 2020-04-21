@@ -113,7 +113,12 @@ class FabricChainCodeTest extends FunSuite {
 
         when(client.newTransactionProposalRequest()).thenReturn(tranProReq)
         when(channel.sendTransactionProposal(tranProReq)).thenReturn(responses)
-        when(channel.sendTransaction(responses, usr))
+        val orderersToSend = asJavaCollection(
+            bootstrapOrderers.map { orderer =>
+                Util.mkOSN(client, orderer)
+            }
+        )
+        when(channel.sendTransaction(responses, orderersToSend, usr))
           .thenReturn(CompletableFuture.completedFuture(null.asInstanceOf[BlockEvent#TransactionEvent]))
 
         new FabricChainCode(client, channel, chainCodeId, codec, bootstrapOrderers, discoveryForEndorsement, discoveryForOrdering)
