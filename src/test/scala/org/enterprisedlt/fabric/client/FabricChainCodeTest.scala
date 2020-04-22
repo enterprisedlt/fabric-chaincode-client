@@ -7,10 +7,11 @@ import org.enterprisedlt.general.codecs.GsonCodec
 import org.enterprisedlt.general.gson._
 import org.enterprisedlt.spec.{BinaryCodec, ContractOperation, ContractResult, OperationType}
 import org.hyperledger.fabric.protos.peer.FabricProposalResponse
+import org.hyperledger.fabric.sdk.Channel.DiscoveryOptions.createDiscoveryOptions
 import org.hyperledger.fabric.sdk._
 import org.hyperledger.fabric.sdk.transaction.TransactionContext
 import org.junit.runner.RunWith
-import org.mockito.Mockito._
+import org.mockito.Mockito.{when, _}
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 
@@ -37,8 +38,6 @@ class FabricChainCodeTest extends FunSuite {
     }
     private val typedGSONCodec = GsonCodec(gsonOptions = _.encodeTypes(typeFieldName = "#TYPE#", typeNamesResolver = NamesResolver))
 
-    private val discoveryForEndorsement = false
-    private val discoveryForOrdering = false
 
     trait TestContractSpec {
         @ContractOperation(OperationType.Invoke)
@@ -52,38 +51,181 @@ class FabricChainCodeTest extends FunSuite {
 
     }
 
-    test("should work with Unit as return type [vanilla GSON]") {
+    // discoveryForEndorsement = false, discoveryForOrdering = false
+
+    test("should work with Unit as return type [vanilla GSON], discoveryForEndorsement = false, discoveryForOrdering = false") {
         val expectedResult: Unit = ()
-        val cc: TestContractSpec = mockChainCodeForInvoke(vanillaGSONCodec, expectedResult).as[TestContractSpec]
+        val discoveryForEndorsement = false
+        val discoveryForOrdering = false
+        val cc: TestContractSpec = mockChainCodeForInvoke(vanillaGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrdering).as[TestContractSpec]
         assert(cc.testReturnUnit(1) == Right(expectedResult))
     }
 
-    test("should work with Unit as return type [typed GSON]") {
+    test("should work with Unit as return type [typed GSON], discoveryForEndorsement = false, discoveryForOrdering = false") {
         val expectedResult: Unit = ()
-        val cc: TestContractSpec = mockChainCodeForInvoke(typedGSONCodec, expectedResult).as[TestContractSpec]
+        val discoveryForEndorsement = false
+        val discoveryForOrdering = false
+        val cc: TestContractSpec = mockChainCodeForInvoke(typedGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrdering).as[TestContractSpec]
         assert(cc.testReturnUnit(1) == Right(expectedResult))
     }
 
-    test("should work with case class as return type [typed GSON]") {
+    test("should work with case class as return type [typed GSON], discoveryForEndorsement = false, discoveryForOrdering = false") {
         val expectedResult = Dummy("x", "y")
-        val cc: TestContractSpec = mockChainCodeForInvoke(typedGSONCodec, expectedResult).as[TestContractSpec]
+        val discoveryForEndorsement = false
+        val discoveryForOrdering = false
+        val cc: TestContractSpec = mockChainCodeForInvoke(typedGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrdering).as[TestContractSpec]
         assert(cc.testReturnDummy(1) == Right(expectedResult))
     }
 
-    test("should work with Long as return type [vanilla GSON]") {
+    test("should work with Long as return type [vanilla GSON], discoveryForEndorsement = false, discoveryForOrdering = false") {
         val expectedResult: Long = 10000000L
-        val cc: TestContractSpec = mockChainCodeForInvoke(vanillaGSONCodec, expectedResult).as[TestContractSpec]
+        val discoveryForEndorsement = false
+        val discoveryForOrdering = false
+        val cc: TestContractSpec = mockChainCodeForInvoke(vanillaGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrdering).as[TestContractSpec]
         assert(cc.testInvokeReturnLong(1) == Right(expectedResult))
     }
 
-    test("should work with Long as return type [typed GSON]") {
+    test("should work with Long as return type [typed GSON], discoveryForEndorsement = false, discoveryForOrdering = false") {
         val expectedResult: Long = 10000000L
-        val cc: TestContractSpec = mockChainCodeForInvoke(typedGSONCodec, expectedResult).as[TestContractSpec]
+        val discoveryForEndorsement = false
+        val discoveryForOrdering = false
+        val cc: TestContractSpec = mockChainCodeForInvoke(typedGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrdering).as[TestContractSpec]
         assert(cc.testInvokeReturnLong(1) == Right(expectedResult))
     }
 
 
-    private def mockChainCodeForInvoke(codec: BinaryCodec, result: Any): FabricChainCode = {
+    // discoveryForEndorsement = true, discoveryForOrdering = false
+
+
+    test("should work with Unit as return type [vanilla GSON], discoveryForEndorsement = true, discoveryForOrdering = false") {
+        val expectedResult: Unit = ()
+        val discoveryForEndorsement = true
+        val discoveryForOrdering = false
+        val cc: TestContractSpec = mockChainCodeForInvoke(vanillaGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrdering).as[TestContractSpec]
+        assert(cc.testReturnUnit(1) == Right(expectedResult))
+    }
+
+    test("should work with Unit as return type [typed GSON], discoveryForEndorsement = true, discoveryForOrdering = false") {
+        val expectedResult: Unit = ()
+        val discoveryForEndorsement = true
+        val discoveryForOrdering = false
+        val cc: TestContractSpec = mockChainCodeForInvoke(typedGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrdering).as[TestContractSpec]
+        assert(cc.testReturnUnit(1) == Right(expectedResult))
+    }
+
+    test("should work with case class as return type [typed GSON], discoveryForEndorsement = true, discoveryForOrdering = false") {
+        val expectedResult = Dummy("x", "y")
+        val discoveryForEndorsement = true
+        val discoveryForOrdering = false
+        val cc: TestContractSpec = mockChainCodeForInvoke(typedGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrdering).as[TestContractSpec]
+        assert(cc.testReturnDummy(1) == Right(expectedResult))
+    }
+
+    test("should work with Long as return type [vanilla GSON], discoveryForEndorsement = true, discoveryForOrdering = false") {
+        val expectedResult: Long = 10000000L
+        val discoveryForEndorsement = true
+        val discoveryForOrdering = false
+        val cc: TestContractSpec = mockChainCodeForInvoke(vanillaGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrdering).as[TestContractSpec]
+        assert(cc.testInvokeReturnLong(1) == Right(expectedResult))
+    }
+
+    test("should work with Long as return type [typed GSON], discoveryForEndorsement = true, discoveryForOrdering = false") {
+        val expectedResult: Long = 10000000L
+        val discoveryForEndorsement = true
+        val discoveryForOrdering = false
+        val cc: TestContractSpec = mockChainCodeForInvoke(typedGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrdering).as[TestContractSpec]
+        assert(cc.testInvokeReturnLong(1) == Right(expectedResult))
+    }
+
+
+    // discoveryForEndorsement = false, discoveryForOrdering = true
+
+
+    test("should work with Unit as return type [vanilla GSON], discoveryForEndorsement = false, discoveryForOrdering = true") {
+        val expectedResult: Unit = ()
+        val discoveryForEndorsement = false
+        val discoveryForOrdering = true
+        val cc: TestContractSpec = mockChainCodeForInvoke(vanillaGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrdering).as[TestContractSpec]
+        assert(cc.testReturnUnit(1) == Right(expectedResult))
+    }
+
+    test("should work with Unit as return type [typed GSON], discoveryForEndorsement = false, discoveryForOrdering = true") {
+        val expectedResult: Unit = ()
+        val discoveryForEndorsement = false
+        val discoveryForOrdering = true
+        val cc: TestContractSpec = mockChainCodeForInvoke(typedGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrdering).as[TestContractSpec]
+        assert(cc.testReturnUnit(1) == Right(expectedResult))
+    }
+
+    test("should work with case class as return type [typed GSON], discoveryForEndorsement = false, discoveryForOrdering = true") {
+        val expectedResult = Dummy("x", "y")
+        val discoveryForEndorsement = false
+        val discoveryForOrdering = true
+        val cc: TestContractSpec = mockChainCodeForInvoke(typedGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrdering).as[TestContractSpec]
+        assert(cc.testReturnDummy(1) == Right(expectedResult))
+    }
+
+    test("should work with Long as return type [vanilla GSON], discoveryForEndorsement = false, discoveryForOrdering = true") {
+        val expectedResult: Long = 10000000L
+        val discoveryForEndorsement = false
+        val discoveryForOrdering = true
+        val cc: TestContractSpec = mockChainCodeForInvoke(vanillaGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrdering).as[TestContractSpec]
+        assert(cc.testInvokeReturnLong(1) == Right(expectedResult))
+    }
+
+    test("should work with Long as return type [typed GSON], discoveryForEndorsement = false, discoveryForOrdering = true") {
+        val expectedResult: Long = 10000000L
+        val discoveryForEndorsement = false
+        val discoveryForOrdering = true
+        val cc: TestContractSpec = mockChainCodeForInvoke(typedGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrdering).as[TestContractSpec]
+        assert(cc.testInvokeReturnLong(1) == Right(expectedResult))
+    }
+
+    // discoveryForEndorsement = true, discoveryForOrdering = true
+
+
+    test("should work with Unit as return type [vanilla GSON], discoveryForEndorsement = true, discoveryForOrdering = true") {
+        val expectedResult: Unit = ()
+        val discoveryForEndorsement = true
+        val discoveryForOrdering = true
+        val cc: TestContractSpec = mockChainCodeForInvoke(vanillaGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrdering).as[TestContractSpec]
+        assert(cc.testReturnUnit(1) == Right(expectedResult))
+    }
+
+    test("should work with Unit as return type [typed GSON], discoveryForEndorsement = true, discoveryForOrdering = true") {
+        val expectedResult: Unit = ()
+        val discoveryForEndorsement = true
+        val discoveryForOrdering = true
+        val cc: TestContractSpec = mockChainCodeForInvoke(typedGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrdering).as[TestContractSpec]
+        assert(cc.testReturnUnit(1) == Right(expectedResult))
+    }
+
+    test("should work with case class as return type [typed GSON], discoveryForEndorsement = true, discoveryForOrdering = true") {
+        val expectedResult = Dummy("x", "y")
+        val discoveryForEndorsement = true
+        val discoveryForOrdering = true
+        val cc: TestContractSpec = mockChainCodeForInvoke(typedGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrdering).as[TestContractSpec]
+        assert(cc.testReturnDummy(1) == Right(expectedResult))
+    }
+
+    test("should work with Long as return type [vanilla GSON], discoveryForEndorsement = true, discoveryForOrdering = true") {
+        val expectedResult: Long = 10000000L
+        val discoveryForEndorsement = true
+        val discoveryForOrdering = true
+        val cc: TestContractSpec = mockChainCodeForInvoke(vanillaGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrdering).as[TestContractSpec]
+        assert(cc.testInvokeReturnLong(1) == Right(expectedResult))
+    }
+
+    test("should work with Long as return type [typed GSON], discoveryForEndorsement = true, discoveryForOrdering = true") {
+        val expectedResult: Long = 10000000L
+        val discoveryForEndorsement = true
+        val discoveryForOrdering = true
+        val cc: TestContractSpec = mockChainCodeForInvoke(typedGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrdering).as[TestContractSpec]
+        assert(cc.testInvokeReturnLong(1) == Right(expectedResult))
+    }
+
+    private def mockChainCodeForInvoke(codec: BinaryCodec, result: Any, discoveryForEndorsement: Boolean, discoveryForOrdering: Boolean): FabricChainCode = {
+
         val client = mock(classOf[HFClient])
         val usr = mock(classOf[User])
         when(client.getUserContext).thenReturn(usr)
@@ -103,14 +245,30 @@ class FabricChainCodeTest extends FunSuite {
           .setPayload(ByteString.copyFrom(ccResult))
           .setResponse(protoResponse)
           .build()
-
-        propResponse.setProposalResponse(proposalResponse)
+        val bootstrapOrderers = mock(classOf[java.util.Collection[Orderer]])
         val responses = List(propResponse).asJava
 
+        propResponse.setProposalResponse(proposalResponse)
+
         when(client.newTransactionProposalRequest()).thenReturn(tranProReq)
+
         when(channel.sendTransactionProposal(tranProReq)).thenReturn(responses)
-        val orderersToSend = mock(classOf[java.util.Collection[Orderer]])
-        when(channel.getOrderers).thenReturn(orderersToSend)
+
+        when(channel.sendTransactionProposalToEndorsers(
+            tranProReq,
+            createDiscoveryOptions()
+              .setEndorsementSelector(ServiceDiscovery.EndorsementSelector.ENDORSEMENT_SELECTION_RANDOM)
+              .setForceDiscovery(true))).thenReturn(responses)
+
+        val orderersToSend = if (discoveryForOrdering) {
+            channel.getOrderers
+        } else {
+            bootstrapOrderers
+        }
+
+        when(channel.getOrderers)
+          .thenReturn(orderersToSend)
+
         when(channel.sendTransaction(responses, orderersToSend, usr))
           .thenReturn(CompletableFuture.completedFuture(null.asInstanceOf[BlockEvent#TransactionEvent]))
 
