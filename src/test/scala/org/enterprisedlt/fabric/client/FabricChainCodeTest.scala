@@ -7,10 +7,11 @@ import org.enterprisedlt.general.codecs.GsonCodec
 import org.enterprisedlt.general.gson._
 import org.enterprisedlt.spec.{BinaryCodec, ContractOperation, ContractResult, OperationType}
 import org.hyperledger.fabric.protos.peer.FabricProposalResponse
-import org.hyperledger.fabric.sdk.Channel.DiscoveryOptions.createDiscoveryOptions
+import org.hyperledger.fabric.sdk.Channel.DiscoveryOptions
 import org.hyperledger.fabric.sdk._
 import org.hyperledger.fabric.sdk.transaction.TransactionContext
 import org.junit.runner.RunWith
+import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.{when, _}
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
@@ -252,13 +253,16 @@ class FabricChainCodeTest extends FunSuite {
 
         when(client.newTransactionProposalRequest()).thenReturn(tranProReq)
 
-        when(channel.sendTransactionProposal(tranProReq)).thenReturn(responses)
+        if(discoveryForEndorsement){
+            when(
+                channel.sendTransactionProposalToEndorsers(
+                    ArgumentMatchers.eq(tranProReq), ArgumentMatchers.any[DiscoveryOptions]
+                )
+            ).thenReturn(responses)
 
-        when(channel.sendTransactionProposalToEndorsers(
-            tranProReq,
-            createDiscoveryOptions()
-              .setEndorsementSelector(ServiceDiscovery.EndorsementSelector.ENDORSEMENT_SELECTION_RANDOM)
-              .setForceDiscovery(true))).thenReturn(responses)
+        } else {
+            when(channel.sendTransactionProposal(tranProReq)).thenReturn(responses)
+        }
 
         val orderersToSend = if (discoveryForOrdering) {
             channel.getOrderers
