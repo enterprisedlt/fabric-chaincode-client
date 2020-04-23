@@ -89,14 +89,14 @@ class FabricChainCodeTest extends FunSuite {
         val expectedResult: Unit = ()
         val discoveryForEndorsementTrue = true
         val cc: TestContractSpec = mockChainCodeForInvoke(typedGSONCodec, expectedResult, discoveryForEndorsementTrue, discoveryForOrdering).as[TestContractSpec]
-        assert(cc.testInvokeReturnLong(1) == Right(expectedResult))
+        assert(cc.testReturnUnit(1) == Right(expectedResult))
     }
 
     test("should work with discoveryForOrdering as true") {
         val expectedResult: Unit = ()
         val discoveryForOrderingTrue = true
         val cc: TestContractSpec = mockChainCodeForInvoke(typedGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrderingTrue).as[TestContractSpec]
-        assert(cc.testInvokeReturnLong(1) == Right(expectedResult))
+        assert(cc.testReturnUnit(1) == Right(expectedResult))
     }
 
     test("should work with discoveryForOrdering and discoveryForEndosement as true") {
@@ -104,7 +104,7 @@ class FabricChainCodeTest extends FunSuite {
         val discoveryForOrdering = true
         val discoveryForEndorsement = true
         val cc: TestContractSpec = mockChainCodeForInvoke(typedGSONCodec, expectedResult, discoveryForEndorsement, discoveryForOrdering).as[TestContractSpec]
-        assert(cc.testInvokeReturnLong(1) == Right(expectedResult))
+        assert(cc.testReturnUnit(1) == Right(expectedResult))
     }
 
 
