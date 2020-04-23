@@ -19,7 +19,9 @@ class FabricChainCode(
     fabricChannel: Channel,
     fabricChainCodeID: ChaincodeID,
     codec: BinaryCodec,
-    chaincodeServiceDiscovery: Boolean
+    bootstrapOrderers: java.util.Collection[Orderer],
+    discoveryForEndorsement: Boolean,
+    discoveryForOrdering: Boolean
 ) {
     type TransactionEvent = BlockEvent#TransactionEvent
 
@@ -55,7 +57,7 @@ class FabricChainCode(
         if (transient.nonEmpty) {
             request.setTransientMap(transient.asJava)
         }
-        val responses = if (chaincodeServiceDiscovery) {
+        val responses = if (discoveryForEndorsement) {
             fabricChannel.sendTransactionProposalToEndorsers(
                 request,
                 createDiscoveryOptions()
@@ -73,9 +75,14 @@ class FabricChainCode(
                 Left(s"Got inconsistent proposal responses [${responsesConsistencySets.size}]")
             }
         } else {
+            val orderersToCommit = if (discoveryForOrdering) {
+                fabricChannel.getOrderers
+            } else {
+                bootstrapOrderers
+            }
             Right(
                 fabricChannel
-                  .sendTransaction(responses, fabricClient.getUserContext)
+                  .sendTransaction(responses, orderersToCommit, fabricClient.getUserContext)
                   .thenApply(
                       new ResultOverwrite[TransactionEvent, Array[Byte]](extractPayload(responses.iterator().next()))
                   )

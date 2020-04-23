@@ -20,7 +20,7 @@ class FabricClient(
 ) {
     private val logger = LoggerFactory.getLogger(this.getClass)
     private val cryptoSuite = CryptoSuite.Factory.getCryptoSuite()
-    private val fabricClient = getHFClient(user)
+    private val fabricClient: HFClient = getHFClient(user)
 
     private def getHFClient(user: User): HFClient = {
         val client = HFClient.createNewInstance()
@@ -48,8 +48,10 @@ class FabricClient(
             }
         }
         channel.initialize()
-        new FabricChannel(fabricClient, channel)
+        val bootstrapOrderers = channel.getOrderers
+        new FabricChannel(fabricClient, channel, bootstrapOrderers)
     }
+
 
     //=========================================================================
     private def mkPeer(config: PeerConfig): Peer = {
@@ -74,4 +76,5 @@ class FabricClient(
                 fabricClient.newOrderer(config.name, config.address, properties)
         }
     }
+
 }
