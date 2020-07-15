@@ -47,7 +47,7 @@ class FabricChannel(
     }
 
 
-    def getBlockByNumber(blockNumber: Int): Either[String, BlockInfo] =
+    def getBlockByNumber(blockNumber: Long): Either[String, BlockInfo] =
         Try(fabricChannel.queryBlockByNumber(blockNumber))
           .toEither.left.map { err =>
             val msg = s"Error: ${err.getMessage}"
