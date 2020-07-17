@@ -1,5 +1,6 @@
 package org.enterprisedlt.fabric.client
 
+import java.lang
 import java.lang.reflect.{InvocationHandler, Method, ParameterizedType, Proxy => JProxy}
 import java.util.concurrent.CompletableFuture
 
@@ -13,6 +14,9 @@ import scala.util.Try
 
 /**
  * @author Alexey Polubelov
+ * @author Maxim Fedin
+ *
+ *
  */
 class FabricChainCode(
     fabricClient: HFClient,
@@ -107,39 +111,54 @@ class FabricChainCode(
           .flatMap(r => Option(r.getMessage))
           .getOrElse("General error occurred")
 
-
+    /**
+     * An instance of proxy is always new, not cached,
+     * the maximum number of instances can be produced is only int max value
+     **/
     def as[T: ClassTag]: T = {
         val clz = classTag[T].runtimeClass.asInstanceOf[Class[T]]
+        val code = Counter.get()
         JProxy
-          .newProxyInstance(clz.getClassLoader, Array(clz), new CCHandler())
+          .newProxyInstance(clz.getClassLoader, Array(clz), new CCHandler(code))
           .asInstanceOf[T]
     }
 
-    class CCHandler extends InvocationHandler {
-        override def invoke(proxy: Any, method: Method, args: Array[AnyRef]): AnyRef = {
-            val function = method.getName
-            method.getGenericReturnType match {
-                case parameterizedType: ParameterizedType =>
-                    val returnTypes = parameterizedType.getActualTypeArguments
-                    val ResultType = returnTypes(1)
-                    val (parameters, transient) = parseArgs(method, Option(args).getOrElse(Array.empty))
-                    method.getAnnotation(classOf[ContractOperation]).value() match {
-                        case OperationType.Query =>
-                            rawQuery(function, parameters.map(codec.encode), transient.mapValues(codec.encode))
-                              .map(value => codec.decode[AnyRef](value, ResultType))
+    private def asBoolean(x: Boolean): lang.Boolean = java.lang.Boolean.valueOf(x)
 
-                        case OperationType.Invoke =>
-                            rawInvoke(function, parameters.map(codec.encode), transient.mapValues(codec.encode))
-                              .flatMap(value => Try(value.get()).toEither.left.map(_.getMessage))
-                              .map(value => ResultType.getTypeName match {
-                                  case "scala.runtime.BoxedUnit" => ()
-                                  case _ => codec.decode[AnyRef](value, ResultType)
-                              })
-                    }
+    class CCHandler(code: Int) extends InvocationHandler {
+        override def invoke(proxy: Any, method: Method, args: Array[AnyRef]): AnyRef = method.getName match {
 
-                case other =>
-                    throw new Exception(s"Unsupported return type: ${other.getTypeName}")
+            case f if f == "hashCode" => code.underlying()
+
+            case f if f == "equals" => if (proxy == null || args(0) == null) {
+                asBoolean(false)
             }
+
+            else asBoolean(proxy.hashCode == args(0).hashCode)
+
+            case function =>
+                method.getGenericReturnType match {
+                    case parameterizedType: ParameterizedType =>
+                        val returnTypes = parameterizedType.getActualTypeArguments
+                        val ResultType = returnTypes(1)
+                        val (parameters, transient) = parseArgs(method, Option(args).getOrElse(Array.empty))
+                        method.getAnnotation(classOf[ContractOperation]).value() match {
+                            case OperationType.Query =>
+                                rawQuery(function, parameters.map(codec.encode), transient.mapValues(codec.encode))
+                                  .map(value => codec.decode[AnyRef](value, ResultType))
+
+                            case OperationType.Invoke =>
+                                rawInvoke(function, parameters.map(codec.encode), transient.mapValues(codec.encode))
+                                  .flatMap(value => Try(value.get()).toEither.left.map(_.getMessage))
+                                  .map(value => ResultType.getTypeName match {
+                                      case "scala.runtime.BoxedUnit" => ()
+                                      case _ => codec.decode[AnyRef](value, ResultType)
+                                  })
+                        }
+
+                    case other =>
+                        throw new Exception(s"Unsupported return type: ${other.getTypeName}")
+                }
         }
     }
 

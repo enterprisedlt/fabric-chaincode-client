@@ -11,10 +11,10 @@ import scala.util.Try
  * @author Alexey Polubelov
  */
 class FabricChannel(
-                       fabricClient: HFClient,
-                       fabricChannel: Channel,
-                       bootstrapOrderers: java.util.Collection[Orderer]
-                   ) {
+    fabricClient: HFClient,
+    fabricChannel: Channel,
+    bootstrapOrderers: java.util.Collection[Orderer]
+    ) {
 
     private val logger = LoggerFactory.getLogger(this.getClass)
 
