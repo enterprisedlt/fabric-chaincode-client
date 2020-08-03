@@ -19,7 +19,7 @@ import scala.util.Try
  *
  */
 class FabricChainCode(
-    fabricClient: HFClient,
+    fabricClient: FabricClient,
     fabricChannel: Channel,
     fabricChainCodeID: ChaincodeID,
     codec: BinaryCodec,
