@@ -16,7 +16,7 @@ import scala.util.Try
  * @author Alexey Polubelov
  */
 class FabricChannel(
-    fabricClient: HFClient,
+    fabricClient: FabricClient,
     fabricChannel: Channel,
     bootstrapOrderers: java.util.Collection[Orderer]
     ) {
@@ -64,7 +64,7 @@ class FabricChannel(
     def addPeer(config: PeerConfig): Either[String, String] = {
         Try {
             if (config.peerRoles.isEmpty) {
-                fabricChannel.addPeer(Util.mkPeer(fabricClient, config))
+                fabricChannel.addPeer(fabricClient.mkPeer( config))
             } else {
                 val peerRolesSet = util.EnumSet
                   .copyOf(
@@ -72,7 +72,7 @@ class FabricChannel(
                   )
                 val peerOptions = createPeerOptions
                   .setPeerRoles(peerRolesSet)
-                fabricChannel.addPeer(Util.mkPeer(fabricClient, config), peerOptions)
+                fabricChannel.addPeer(fabricClient.mkPeer( config), peerOptions)
             }
         }.toEither match {
             case Right(_) => Right("Success")

@@ -110,7 +110,7 @@ class FabricChainCodeTest extends FunSuite {
 
     private def mockChainCodeForInvoke(codec: BinaryCodec, result: Any, discoveryForEndorsement: Boolean, discoveryForOrdering: Boolean): FabricChainCode = {
 
-        val client = mock(classOf[HFClient])
+        val client = mock(classOf[FabricClient])
         val usr = mock(classOf[User])
         when(client.getUserContext).thenReturn(usr)
         val channel = mock(classOf[Channel])

@@ -1,12 +1,12 @@
 package org.enterprisedlt.fabric.client
 
 import java.util
+import java.util.Properties
 
 import org.enterprisedlt.fabric.client.configuration._
 import org.hyperledger.fabric.sdk.Channel.PeerOptions.createPeerOptions
 import org.hyperledger.fabric.sdk.security.CryptoSuite
-import org.hyperledger.fabric.sdk.{HFClient, User}
-import org.slf4j.LoggerFactory
+import org.hyperledger.fabric.sdk._
 
 import scala.collection.JavaConverters._
 
@@ -17,6 +17,7 @@ class FabricClient(
     user: User,
     network: Network
 ) {
+
     private val cryptoSuite = CryptoSuite.Factory.getCryptoSuite()
     private val fabricClient: HFClient = getHFClient(user)
 
@@ -30,11 +31,11 @@ class FabricClient(
     def channel(name: String): FabricChannel = {
         val channel = fabricClient.newChannel(name)
         network.ordering.foreach { config =>
-            channel.addOrderer(Util.mkOSN(fabricClient, config))
+            channel.addOrderer(mkOSN(config))
         }
         network.peers.foreach { config =>
             if (config.peerRoles.isEmpty) {
-                channel.addPeer(Util.mkPeer(fabricClient, config))
+                channel.addPeer(mkPeer(config))
             } else {
                 val peerRolesSet = util.EnumSet
                   .copyOf(
@@ -42,12 +43,52 @@ class FabricClient(
                   )
                 val peerOptions = createPeerOptions
                   .setPeerRoles(peerRolesSet)
-                channel.addPeer(Util.mkPeer(fabricClient, config), peerOptions)
+                channel.addPeer(mkPeer(config), peerOptions)
             }
         }
         channel.initialize()
         val bootstrapOrderers = channel.getOrderers
-        new FabricChannel(fabricClient, channel, bootstrapOrderers)
+        new FabricChannel(this, channel, bootstrapOrderers)
     }
+
+
+    private[client] def mkPeer(config: PeerConfig): Peer = {
+        config.setting match {
+            case Plain =>
+                fabricClient.newPeer(config.name, config.address)
+            case TLSPath(path) =>
+                val properties = new Properties()
+                properties.put("pemFile", path)
+                fabricClient.newPeer(config.name, config.address, properties)
+            case TLSPem(bytes) =>
+                val properties = new Properties()
+                properties.put("pemBytes", bytes)
+                fabricClient.newPeer(config.name, config.address, properties)
+
+
+        }
+    }
+
+    private[client] def mkOSN(config: OSNConfig): Orderer = {
+        config.setting match {
+            case Plain =>
+                fabricClient.newOrderer(config.name, config.address)
+            case TLSPath(path) =>
+                val properties = new Properties()
+                properties.put("pemFile", path)
+                fabricClient.newOrderer(config.name, config.address, properties)
+            case TLSPem(bytes) =>
+                val properties = new Properties()
+                properties.put("pemBytes", bytes)
+                fabricClient.newOrderer(config.name, config.address, properties)
+
+        }
+    }
+
+    private[client] def newQueryProposalRequest(): QueryByChaincodeRequest = fabricClient.newQueryProposalRequest()
+
+    private[client] def newTransactionProposalRequest(): TransactionProposalRequest = fabricClient.newTransactionProposalRequest()
+
+    private[client] def getUserContext: User = fabricClient.getUserContext
 
 }
