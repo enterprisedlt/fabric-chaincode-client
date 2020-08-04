@@ -56,10 +56,10 @@ class FabricClient(
         config.setting match {
             case Plain =>
                 fabricClient.newPeer(config.name, s"grpc://${config.host}:${config.port}")
-            case TLSPath(path, overrideHostName) =>
+            case TLSPath(path, hostnameOverride) =>
                 val properties = new Properties()
                 properties.put("pemFile", path)
-                if (overrideHostName) properties.put("hostnameOverride", config.host)
+                hostnameOverride.foreach(hostnameOverride => properties.put("hostnameOverride", hostnameOverride))
                 fabricClient.newPeer(config.name, s"grpcs://${config.host}:${config.port}", properties)
             case TLSPem(certificatePem, clientKeyPem, clientCertPem, hostnameOverride) =>
                 val properties = new Properties()
@@ -77,10 +77,10 @@ class FabricClient(
         config.setting match {
             case Plain =>
                 fabricClient.newOrderer(config.name, s"grpc://${config.host}:${config.port}")
-            case TLSPath(path, overrideHostName) =>
+            case TLSPath(path, hostnameOverride) =>
                 val properties = new Properties()
                 properties.put("pemFile", path)
-                if (overrideHostName) properties.put("hostnameOverride", config.host)
+                hostnameOverride.foreach(hostnameOverride => properties.put("hostnameOverride", hostnameOverride))
                 fabricClient.newOrderer(config.name, s"grpcs://${config.host}:${config.port}", properties)
             case TLSPem(certificatePem, clientKeyPem, clientCertPem, hostnameOverride) =>
                 val properties = new Properties()
