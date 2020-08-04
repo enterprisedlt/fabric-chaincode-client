@@ -14,6 +14,8 @@ case class TLSPath(
 ) extends ConnectionSettings
 
 case class TLSPem(
-    certificatePem: Array[Byte],
-    hostnameOverride: Boolean = false
+    certificatePem: Option[Array[Byte]] = None,
+    clientKeyPem: Option[Array[Byte]] = None,
+    clientCertPem: Option[Array[Byte]] = None,
+    hostnameOverride: Option[String]
 ) extends ConnectionSettings
