@@ -10,7 +10,7 @@ case object Plain extends ConnectionSettings
 
 case class TLSPath(
     certificatePath: String,
-    hostnameOverride: Boolean = false
+    hostnameOverride: Option[String]
 ) extends ConnectionSettings
 
 case class TLSPem(

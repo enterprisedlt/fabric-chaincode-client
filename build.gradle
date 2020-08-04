@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'org.enterprisedlt.fabric'
-version '1.4.3.200-RC13-beta3'
+version '1.4.3.200-RC13-beta4'
 
 compileScala.targetCompatibility = 1.8
 
