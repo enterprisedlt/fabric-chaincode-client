@@ -5,8 +5,8 @@ import java.util.Properties
 
 import org.enterprisedlt.fabric.client.configuration._
 import org.hyperledger.fabric.sdk.Channel.PeerOptions.createPeerOptions
-import org.hyperledger.fabric.sdk.security.CryptoSuite
 import org.hyperledger.fabric.sdk._
+import org.hyperledger.fabric.sdk.security.CryptoSuite
 
 import scala.collection.JavaConverters._
 
@@ -55,15 +55,17 @@ class FabricClient(
     private[client] def mkPeer(config: PeerConfig): Peer = {
         config.setting match {
             case Plain =>
-                fabricClient.newPeer(config.name, config.address)
-            case TLSPath(path) =>
+                fabricClient.newPeer(config.name, s"grpc://${config.host}${config.port}")
+            case TLSPath(path, overrideHostName) =>
                 val properties = new Properties()
                 properties.put("pemFile", path)
-                fabricClient.newPeer(config.name, config.address, properties)
-            case TLSPem(bytes) =>
+                if (overrideHostName) properties.put("hostnameOverride", config.host)
+                fabricClient.newPeer(config.name, s"grpcs://${config.host}${config.port}", properties)
+            case TLSPem(bytes, overrideHostName) =>
                 val properties = new Properties()
                 properties.put("pemBytes", bytes)
-                fabricClient.newPeer(config.name, config.address, properties)
+                if (overrideHostName) properties.put("hostnameOverride", config.host)
+                fabricClient.newPeer(config.name, s"grpcs://${config.host}${config.port}", properties)
 
 
         }
@@ -72,15 +74,17 @@ class FabricClient(
     private[client] def mkOSN(config: OSNConfig): Orderer = {
         config.setting match {
             case Plain =>
-                fabricClient.newOrderer(config.name, config.address)
-            case TLSPath(path) =>
+                fabricClient.newOrderer(config.name, s"grpc://${config.host}${config.port}")
+            case TLSPath(path, overrideHostName) =>
                 val properties = new Properties()
                 properties.put("pemFile", path)
-                fabricClient.newOrderer(config.name, config.address, properties)
-            case TLSPem(bytes) =>
+                if (overrideHostName) properties.put("hostnameOverride", config.host)
+                fabricClient.newOrderer(config.name, s"grpcs://${config.host}${config.port}", properties)
+            case TLSPem(bytes, overrideHostName) =>
                 val properties = new Properties()
                 properties.put("pemBytes", bytes)
-                fabricClient.newOrderer(config.name, config.address, properties)
+                if (overrideHostName) properties.put("hostnameOverride", config.host)
+                fabricClient.newOrderer(config.name, s"grpcs://${config.host}${config.port}", properties)
 
         }
     }

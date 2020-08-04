@@ -5,6 +5,7 @@ package org.enterprisedlt.fabric.client.configuration
  */
 case class OSNConfig(
     name: String,
-    address: String,
+    host: String,
+    port: Int,
     setting: ConnectionSettings = Plain
 )
