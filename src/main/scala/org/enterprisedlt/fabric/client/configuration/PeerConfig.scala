@@ -7,7 +7,8 @@ import org.hyperledger.fabric.sdk.Peer.PeerRole
  */
 case class PeerConfig(
     name: String,
-    address: String,
+    host: String,
+    port: Int,
     setting: ConnectionSettings = Plain,
     peerRoles: Array[PeerRole] = Array.empty
 )

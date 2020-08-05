@@ -5,8 +5,8 @@ import java.util.Properties
 
 import org.enterprisedlt.fabric.client.configuration._
 import org.hyperledger.fabric.sdk.Channel.PeerOptions.createPeerOptions
-import org.hyperledger.fabric.sdk.security.CryptoSuite
 import org.hyperledger.fabric.sdk._
+import org.hyperledger.fabric.sdk.security.CryptoSuite
 
 import scala.collection.JavaConverters._
 
@@ -55,15 +55,19 @@ class FabricClient(
     private[client] def mkPeer(config: PeerConfig): Peer = {
         config.setting match {
             case Plain =>
-                fabricClient.newPeer(config.name, config.address)
-            case TLSPath(path) =>
+                fabricClient.newPeer(config.name, s"grpc://${config.host}:${config.port}")
+            case TLSPath(path, hostnameOverride) =>
                 val properties = new Properties()
                 properties.put("pemFile", path)
-                fabricClient.newPeer(config.name, config.address, properties)
-            case TLSPem(bytes) =>
+                hostnameOverride.foreach(hostnameOverride => properties.put("hostnameOverride", hostnameOverride))
+                fabricClient.newPeer(config.name, s"grpcs://${config.host}:${config.port}", properties)
+            case TLSPem(certificatePem, clientKeyPem, clientCertPem, hostnameOverride) =>
                 val properties = new Properties()
-                properties.put("pemBytes", bytes)
-                fabricClient.newPeer(config.name, config.address, properties)
+                certificatePem.foreach(certificatePem => properties.put("pemBytes", certificatePem))
+                clientKeyPem.foreach(clientKeyPem => properties.put("clientKeyBytes", clientKeyPem))
+                clientCertPem.foreach(clientCertPem => properties.put("clientCertBytes", clientCertPem))
+                hostnameOverride.foreach(hostnameOverride => properties.put("hostnameOverride", hostnameOverride))
+                fabricClient.newPeer(config.name, s"grpcs://${config.host}:${config.port}", properties)
 
 
         }
@@ -72,15 +76,19 @@ class FabricClient(
     private[client] def mkOSN(config: OSNConfig): Orderer = {
         config.setting match {
             case Plain =>
-                fabricClient.newOrderer(config.name, config.address)
-            case TLSPath(path) =>
+                fabricClient.newOrderer(config.name, s"grpc://${config.host}:${config.port}")
+            case TLSPath(path, hostnameOverride) =>
                 val properties = new Properties()
                 properties.put("pemFile", path)
-                fabricClient.newOrderer(config.name, config.address, properties)
-            case TLSPem(bytes) =>
+                hostnameOverride.foreach(hostnameOverride => properties.put("hostnameOverride", hostnameOverride))
+                fabricClient.newOrderer(config.name, s"grpcs://${config.host}:${config.port}", properties)
+            case TLSPem(certificatePem, clientKeyPem, clientCertPem, hostnameOverride) =>
                 val properties = new Properties()
-                properties.put("pemBytes", bytes)
-                fabricClient.newOrderer(config.name, config.address, properties)
+                certificatePem.foreach(certificatePem => properties.put("pemBytes", certificatePem))
+                clientKeyPem.foreach(clientKeyPem => properties.put("clientKeyBytes", clientKeyPem))
+                clientCertPem.foreach(clientCertPem => properties.put("clientCertBytes", clientCertPem))
+                hostnameOverride.foreach(hostnameOverride => properties.put("hostnameOverride", hostnameOverride))
+                fabricClient.newOrderer(config.name, s"grpcs://${config.host}:${config.port}", properties)
 
         }
     }
