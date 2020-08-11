@@ -66,7 +66,9 @@ class FabricChainCode(
                 request,
                 createDiscoveryOptions()
                   .setEndorsementSelector(ServiceDiscovery.EndorsementSelector.ENDORSEMENT_SELECTION_RANDOM)
-                  .setForceDiscovery(true))
+                  .setForceDiscovery(true)
+                  .setInspectResults(true)
+            )
         } else fabricChannel.sendTransactionProposal(request)
         val responsesConsistencySets = SDKUtils.getProposalConsistencySets(responses)
         if (responsesConsistencySets.size() != 1) {
