@@ -67,6 +67,7 @@ class FabricChainCode(
                 createDiscoveryOptions()
                   .setEndorsementSelector(ServiceDiscovery.EndorsementSelector.ENDORSEMENT_SELECTION_RANDOM)
                   .setForceDiscovery(true)
+                  // indicate to sdk that we will handle result sets by our self
                   .setInspectResults(true)
             )
         } else fabricChannel.sendTransactionProposal(request)
