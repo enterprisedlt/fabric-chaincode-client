@@ -2,7 +2,6 @@ package org.enterprisedlt.fabric.client
 
 import java.util
 import java.util.Properties
-
 import org.enterprisedlt.fabric.client.configuration._
 import org.hyperledger.fabric.sdk.Channel.PeerOptions.createPeerOptions
 import org.hyperledger.fabric.sdk._
@@ -17,7 +16,6 @@ class FabricClient(
     user: User,
     network: Network
 ) {
-
     private val cryptoSuite = CryptoSuite.Factory.getCryptoSuite()
     private val fabricClient: HFClient = getHFClient(user)
 
@@ -46,8 +44,8 @@ class FabricClient(
                 channel.addPeer(mkPeer(config), peerOptions)
             }
         }
-        channel.initialize()
         val bootstrapOrderers = channel.getOrderers
+        channel.initialize()
         new FabricChannel(this, channel, bootstrapOrderers)
     }
 
